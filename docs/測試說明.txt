@@ -1,0 +1,55 @@
+FastBlockBreak 0.2.0-test2 / Windows x64
+支援：Minecraft 1.26.45.01、1.26.51.01、1.26.52.03。
+同一個 DLL 自動辨識版本，載入即啟用，無熱鍵、無設定檔。
+
+安裝：
+1. 關閉準備安裝的遊戲版本。
+2. 從 LeviLauncher 的模組管理匯入 ZIP；或把 FastBlockBreak.dll、manifest.json、mod.json 放進該版本的 mods\FastBlockBreak。
+3. 確認該版本模組清單中的 FastBlockBreak 已啟用，再啟動遊戲。
+4. 在目標版本進入測試世界驗證。
+
+本版修正：26.45 診斷顯示世界使用「模式 5、子模式 1」，test1 漏判了這條創造分支。
+test2 按原版方式解析世界預設模式，僅在它確實為創造時開啟移動門檻。
+臨時診斷日誌執行緒不編入此 DLL。
+
+請在兩個新增版本分別測試：
+- 創造模式按住左鍵，站定連續破壞相鄰方塊。
+- 前、後、左、右及斜向移動時連續破壞。
+- 跳躍與掉落過程中連續破壞。
+- 生存模式單塊挖掘進度、工具速度保持原版。
+- 箱子、背包、選單與實體攻擊維持正常。
+- 離開世界並重新進入，確認不崩潰。
+
+26.45、26.51 的函式與欄位已由 IDA 9.3 核實；版本辨識、入口檢查及原始/安裝 EXE 的離線驗證通過後才交付。
+26.45 的 test2 已由使用者確認站定、前後左右移動與跳躍連續破壞正常。
+26.51 尚未取得明確的遊戲實測確認；26.52 的既有 0.1.0 已實測正常，新版保留版本檢查並通過回歸測試，但未重新完成全部遊戲實測。
+只清除方塊間的客戶端時間門檻，並在創造模式原版呼叫期間開啟移動距離門檻。
+未知 PE 或任一函式入口 bytes 不符時，插件自動停用。
+不修改 Minecraft.Windows.exe。伺服器仍可獨立限制破壞行為。
+
+English instructions
+FastBlockBreak 0.2.0-test2 / Windows x64
+Supported exact profiles: Minecraft 1.26.45.01, 1.26.51.01, 1.26.52.03.
+Enabled on load, automatic version selection, no hotkey or config.
+
+Features:
+- Removes the client-side time gate between block breaks.
+- Temporarily opens the movement-distance gate during the original creative-mode call only.
+- World block-destruction continuation only; no changes to survival break progress, hardness, tool speed, durability, reach, packets, or server rules.
+- Unknown PE identities or mismatched native function-entry guards keep the plugin inactive. No game executable modification.
+
+Install:
+1. Close the target game version.
+2. Import the release ZIP in LeviLauncher's mod manager, or place FastBlockBreak.dll, manifest.json and mod.json in that version's mods/FastBlockBreak directory.
+3. Enable FastBlockBreak and launch the game. The loader must support preload-native manifests.
+4. Test in a disposable world first; do not replace DLLs while the game is running.
+To uninstall, close the game and remove that version's mods/FastBlockBreak folder.
+
+Test scope:
+- 1.26.45.01: the user confirmed test2 stationary, forward/back/left/right movement and jumping continuous breaking.
+- 1.26.51.01: IDA/native profile and offline checks pass; explicit gameplay confirmation remains pending.
+- 1.26.52.03: prior 0.1.0 gameplay confirmed stationary/directional/diagonal movement, jumping/falling and vanilla survival speed. New profiles pass regression checks; the full gameplay matrix was not repeated with test2.
+Recommended checks: creative stationary/moving/jumping/falling breaking, survival progress, containers/menus/entity attacks, and leaving/rejoining a world.
+Offline checks do not establish full gameplay, multiplayer or long-session stability. Server restrictions still apply.
+
+Test2 fixes world-default creative mode (mode 5, default 1); the temporary diagnostic logging thread is not included.

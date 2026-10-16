@@ -1,0 +1,26 @@
+add_rules("mode.debug", "mode.release")
+set_languages("c++20")
+set_allowedplats("windows")
+set_allowedarchs("x64")
+set_targetdir("build/$(plat)/$(arch)/$(mode)")
+add_requires("minhook 1.3.4")
+
+target("FastBlockBreak")
+    set_kind("shared")
+    add_files("src/FastBlockBreak.cpp", "src/VersionProfile.cpp", "src/NativeState.cpp")
+    add_includedirs("include")
+    add_packages("minhook")
+    add_syslinks("user32")
+    add_cxflags("/utf-8")
+    if is_mode("release") then
+        set_strip("all")
+    end
+target_end()
+
+target("FastBlockBreakTests")
+    set_kind("binary")
+    add_files("tests/FastBlockBreakTests.cpp", "src/Policy.cpp", "src/Dispatch.cpp", "src/VersionProfile.cpp", "src/NativeState.cpp", "src/NativeBridge.cpp")
+    add_includedirs("include")
+    add_syslinks("user32")
+    add_cxflags("/utf-8")
+target_end()
