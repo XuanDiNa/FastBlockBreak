@@ -1,4 +1,5 @@
 #include "FastBlockBreak/Dispatch.h"
+#include "FastBlockBreak/Config.h"
 #include "FastBlockBreak/NativeState.h"
 #include "FastBlockBreak/NativeBridge.h"
 #include "FastBlockBreak/Policy.h"
@@ -21,6 +22,34 @@ void Check(bool condition, char const* message) {
         std::cerr << "FAIL: " << message << '\n';
         ++failures;
     }
+}
+
+void TestEnabledConfigParsing() {
+    using namespace fastblockbreak;
+    bool enabled = false;
+    Check(ParseEnabledConfig(R"({"enabled":true})", enabled) && enabled,
+          "enabled true must parse");
+    enabled = true;
+    Check(ParseEnabledConfig(R"({"enabled":false,"future":{"keep":1}})", enabled) && !enabled,
+          "enabled false must parse while preserving unknown fields for the writer");
+    enabled = false;
+    Check(ParseEnabledConfig(R"({"future":true})", enabled) && enabled,
+          "missing enabled must use the enabled default");
+    Check(!ParseEnabledConfig(R"({"enabled":1})", enabled),
+          "non-boolean enabled must be rejected");
+    Check(!ParseEnabledConfig(R"({"enabled":true,"enabled":false})", enabled),
+          "duplicate enabled must be rejected");
+    Check(!ParseEnabledConfig(R"([])", enabled),
+          "non-object config must be rejected");
+    Check(!ParseEnabledConfig(R"({"enabled":true,})", enabled),
+          "trailing comma must be rejected");
+    Check(!ParseEnabledConfig(R"({"enabled":true} trailing)", enabled),
+          "trailing data must be rejected");
+    auto const lastValid = enabled;
+    Check(!ParseEnabledConfig(R"({"enabled":"false"})", enabled) && enabled == lastValid,
+          "invalid JSON must not replace the last valid enabled state");
+    Check(!ParseEnabledConfig(R"({"en\u0061bled":true,"enabled":false})", enabled),
+          "escaped duplicate enabled member must be rejected");
 }
 
 void TestPolicyRejectsEveryUnsafeState() {
@@ -477,6 +506,7 @@ void TestOnDiskExecutable(char const* path) {
 } // namespace
 
 int main(int argc, char** argv) {
+    TestEnabledConfigParsing();
     TestPolicyRejectsEveryUnsafeState();
     TestDispatchStopsWhenSecondSnapshotIsNotBlock();
     TestDispatchRunsExactlyTwoBlockPasses();

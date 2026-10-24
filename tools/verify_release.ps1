@@ -22,12 +22,16 @@ try {
     if (!$dumpbin) { throw 'dumpbin.exe not found' }
     $exports = (& $dumpbin /exports $dll | Out-String)
     if ($LASTEXITCODE) { throw 'export inspection failed' }
-    foreach ($name in 'FastBlockBreakInit','FastBlockBreakStop','FastBlockBreakStatus') {
+    foreach ($name in 'FastBlockBreakInit','FastBlockBreakStop','FastBlockBreakStatus','FastBlockBreakEnabled') {
         if ($exports -notmatch "\b$([regex]::Escape($name))\b") { throw "missing export: $name" }
     }
-    $manifest = Get-Content -Raw manifest.json | ConvertFrom-Json
-    $metadata = Get-Content -Raw mod.json | ConvertFrom-Json
+    $manifest = Get-Content -Raw -Encoding UTF8 manifest.json | ConvertFrom-Json
+    $metadata = Get-Content -Raw -Encoding UTF8 mod.json | ConvertFrom-Json
     if ($manifest.version -ne $metadata.version -or $manifest.entry -ne 'FastBlockBreak.dll' -or $manifest.type -ne 'preload-native') { throw 'metadata mismatch' }
+    $config = Get-Content -Raw -Encoding UTF8 config.json | ConvertFrom-Json
+    if ($config.enabled -isnot [bool] -or !$config.enabled) { throw 'default config must enable the feature' }
+    $description = Get-Content -Raw -Encoding UTF8 modmenu.settings.json | ConvertFrom-Json
+    if ($description.plugin.id -ne $manifest.name -or $description.plugin.entry -ne $manifest.entry -or $manifest.version -notin $description.plugin.versions -or $description.config.file -ne 'config.json' -or $description.config.reload -ne 'hot' -or $description.fields.Count -ne 1 -or $description.fields[0].path -ne '/enabled' -or $description.fields[0].type -ne 'boolean') { throw 'ModMenu description mismatch' }
     Get-FileHash -LiteralPath $dll -Algorithm SHA256
     Write-Host 'Debug/release tests, release build, AMD64, exports and metadata checks passed. Gameplay is not tested by this script.'
 } finally { Pop-Location }
